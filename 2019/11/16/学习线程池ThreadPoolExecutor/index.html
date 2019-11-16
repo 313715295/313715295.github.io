@@ -6,14 +6,21 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://313715295.github.io">
-  <title>Category: 默认分类 | 随缘记</title>
+  <title>学习线程池ThreadPoolExecutor | 随缘记</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="随缘记">
-<meta property="og:url" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;categories&#x2F;%E9%BB%98%E8%AE%A4%E5%88%86%E7%B1%BB&#x2F;">
+  <meta name="description" content="目的： 疑惑线程池参数作用和区别？ 疑惑线程池怎么管理线程的？ 疑惑线程池中的线程状态变更，什么时候进入阻塞状态，什么时候唤醒，机制是？  学习：前人栽树后人乘凉，看大佬的源码解析 https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dolphin0520&#x2F;p&#x2F;3932921.html ，很详细，看完每个人的疑惑应该都能解开了。 所得：大部分疑惑看完源码解析后都有数了，但是还一个疑惑未解，很多教程可能">
+<meta name="keywords" content="线程池,多线程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="学习线程池ThreadPoolExecutor">
+<meta property="og:url" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;16&#x2F;%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor&#x2F;">
 <meta property="og:site_name" content="随缘记">
+<meta property="og:description" content="目的： 疑惑线程池参数作用和区别？ 疑惑线程池怎么管理线程的？ 疑惑线程池中的线程状态变更，什么时候进入阻塞状态，什么时候唤醒，机制是？  学习：前人栽树后人乘凉，看大佬的源码解析 https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dolphin0520&#x2F;p&#x2F;3932921.html ，很详细，看完每个人的疑惑应该都能解开了。 所得：大部分疑惑看完源码解析后都有数了，但是还一个疑惑未解，很多教程可能">
 <meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;16&#x2F;%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor&#x2F;%E8%8E%B7%E5%8F%96%E4%BB%BB%E5%8A%A1.jpg">
+<meta property="og:image" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;16&#x2F;%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor&#x2F;%E9%98%BB%E5%A1%9E%E8%8E%B7%E5%8F%96%E4%BB%BB%E5%8A%A1.jpg">
+<meta property="og:updated_time" content="2019-11-16T09:14:55.301Z">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;16&#x2F;%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor&#x2F;%E8%8E%B7%E5%8F%96%E4%BB%BB%E5%8A%A1.jpg">
   
     <link rel="alternative" href="/atom.xml" title="随缘记" type="application/atom+xml">
   
@@ -127,71 +134,175 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-学习线程池ThreadPoolExecutor" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2019" class="archive-year">2019</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2019/11/15/%E5%8D%9A%E5%AE%A2%E9%83%A8%E7%BD%B2%E8%87%B3github/" class="archive-article-date">
-  	<time datetime="2019-11-15T15:17:08.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-11-15</time>
-</a>
-        </div>
-    	 
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2019/11/15/%E5%8D%9A%E5%AE%A2%E9%83%A8%E7%BD%B2%E8%87%B3github/">博客部署至github</a>
+    <h1 class="article-title" itemprop="name">
+      学习线程池ThreadPoolExecutor
     </h1>
   
 
-        <div class="article-info info-on-right">
-          
+        
+        <a href="/2019/11/16/%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor/" class="archive-article-date">
+  	<time datetime="2019-11-16T08:20:51.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-11-16</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="目的："><a href="#目的：" class="headerlink" title="目的："></a>目的：</h1><ol>
+<li>疑惑线程池参数作用和区别？</li>
+<li>疑惑线程池怎么管理线程的？</li>
+<li>疑惑线程池中的线程状态变更，什么时候进入阻塞状态，什么时候唤醒，机制是？</li>
+</ol>
+<h1 id="学习："><a href="#学习：" class="headerlink" title="学习："></a>学习：</h1><p>前人栽树后人乘凉，看大佬的源码解析 <a href="https://www.cnblogs.com/dolphin0520/p/3932921.html" target="_blank" rel="noopener">https://www.cnblogs.com/dolphin0520/p/3932921.html</a> ，很详细，看完每个人的疑惑应该都能解开了。</p>
+<h1 id="所得："><a href="#所得：" class="headerlink" title="所得："></a>所得：</h1><p>大部分疑惑看完源码解析后都有数了，但是还一个疑惑未解，很多教程可能也有这个说法，线程池的线程执行完任务后不会关闭线程，而是还给线程池。。这个还，具体是什么情况呢。</p>
+<p>线程池新建完线程后，如果线程在核心线程数内，不会关闭，执行完任务后会重新循环获取任务，如果大于核心线程数少于最大线程数，会涉及到关闭空余线程的过程。</p>
+<p><img src="/2019/11/16/%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor/%E8%8E%B7%E5%8F%96%E4%BB%BB%E5%8A%A1.jpg" alt></p>
+<p>当任务队列没有任务的时候，线程为什么会进入阻塞状态呢？因为任务队列是BlockingQueue，take()方法会阻塞至获取到新元素为止。当任务队列新增任务的时候会唤醒阻塞在take()方法中的线程。</p>
+<p>另一个wokeQueue.poll()方法意义呢？会尝试在keepAliveTime时间内去获取任务，如果获取不到就返回。</p>
+<p>所以，所传入的BlockingQueue具体实现类影响线程池获取任务的形式，并且会影响线程池创建线程的流程。</p>
+<p>比如 LinkedBlockingQueue ，没有指定大小的时候默认 Integer.MAX_VALUE，也就是说在队列满之前不会创建大于核心线程数的线程，最大线程数这个参数就没有意义。</p>
+<p> synchronousQueue ，特殊的队列，也可以说不算队列吧，不存储元素，而是相当于一个中转，一个线程put元素后必须另一个线程take取走才可以。具体可以看源码解析<del>~</del></p>
+<p><img src="/2019/11/16/%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor/%E9%98%BB%E5%A1%9E%E8%8E%B7%E5%8F%96%E4%BB%BB%E5%8A%A1.jpg" alt="阻塞获取任务"></p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">IT技术</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">线程池</a>
+        		</li>
+      		 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">多线程</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
+      
 	<div class="article-category tagcloud">
 		<i class="icon-book icon"></i>
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="/categories/默认分类//" class="article-tag-list-link color5">默认分类</a>
+        			<a href="/categories/java//" class="article-tag-list-link color5">java</a>
         		</li>
       		
 		</ul>
 	</div>
 
 
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=https://313715295.github.io/2019/11/16/%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
+  
+<nav id="article-nav">
   
   
-    </div></section>
+    <a href="/2019/11/15/%E5%8D%9A%E5%AE%A2%E9%83%A8%E7%BD%B2%E8%87%B3github/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">博客部署至github</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+  
+  
   
 
-    
+  
+
+  
+
+  
 
 
           </div>
@@ -214,10 +325,10 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
+		isPost: true,
 		isArchive: false,
 		isTag: false,
-		isCategory: true,
+		isCategory: false,
 		open_in_new: true,
 		toc_hide_index: true,
 		root: "/",
