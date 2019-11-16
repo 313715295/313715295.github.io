@@ -157,14 +157,14 @@
 </ol>
 <h2 id="一、教程"><a href="#一、教程" class="headerlink" title="一、教程"></a>一、教程</h2><p>大致可以参考<a href="https://blog.csdn.net/zyxhangiian123456789/article/details/101797464" target="_blank" rel="noopener">https://blog.csdn.net/zyxhangiian123456789/article/details/101797464</a>，以及官方文档 <a href="https://hexo.io/zh-cn/docs/setup。" target="_blank" rel="noopener">https://hexo.io/zh-cn/docs/setup。</a></p>
 <h2 id="二、细节"><a href="#二、细节" class="headerlink" title="二、细节"></a>二、细节</h2><h4 id="区分hexo生成博客的资源文件和github展示博客所需的文件"><a href="#区分hexo生成博客的资源文件和github展示博客所需的文件" class="headerlink" title="区分hexo生成博客的资源文件和github展示博客所需的文件"></a>区分hexo生成博客的资源文件和github展示博客所需的文件</h4><ul>
-<li><strong>安装hexo成功后，执行hexo init &lt;目标文件夹&gt;命令后生成的相关文件为生成博客所需的资源文件(不包括public文件夹，public文件夹每次只需hexo g命令都会重新生成对应的文件)。</strong>  <blockquote>
+<li><strong>安装hexo成功后，执行hexo init &lt;目标文件夹&gt;命令后生成的相关文件为生成博客所需的资源文件。</strong>  <blockquote>
 <p><img src="/2019/11/15/%E5%8D%9A%E5%AE%A2%E9%83%A8%E7%BD%B2%E8%87%B3github/%E5%8D%9A%E5%AE%A2%E8%B5%84%E6%BA%90%E6%96%87%E4%BB%B6.jpg" alt>  </p>
 </blockquote>
 </li>
 </ul>
 <p>​    </p>
 <ul>
-<li><p><strong>github展示博客所需的文件为执行hexo g命令后，生成的public文件夹里的内容。</strong></p>
+<li><p><strong>github展示博客所需的文件为执行hexo g命令后，生成的public文件夹里的内容。hexo d（部署命令，包含hexo g功能并上传）</strong></p>
 <blockquote>
 <p><img src="/2019/11/15/%E5%8D%9A%E5%AE%A2%E9%83%A8%E7%BD%B2%E8%87%B3github/github%E5%B1%95%E7%A4%BA%E5%8D%9A%E5%AE%A2.jpg" alt>    </p>
 </blockquote>
@@ -173,7 +173,7 @@
 <h2 id="三、github"><a href="#三、github" class="headerlink" title="三、github"></a>三、github</h2><p>为了方便，github上可以创建两个仓库，一个存储生成博客所需的文件，每次修改后上传即可（备份作用）。<br>另一个仓库则参考教程开启github page，依靠 hexo d 命令（需要配置yml，地址为开启github page的仓库地址）部署即可。  </p>
 <h2 id="四、部署"><a href="#四、部署" class="headerlink" title="四、部署"></a>四、部署</h2><p><img src="/2019/11/15/%E5%8D%9A%E5%AE%A2%E9%83%A8%E7%BD%B2%E8%87%B3github/%E5%8D%9A%E5%AE%A2%E9%83%A8%E7%BD%B2%E8%87%B3github%5C%E5%8D%9A%E5%AE%A2%E9%83%A8%E7%BD%B2.jpg" alt="博客部署"></p>
 <h2 id="五、本地图片无法显示问题"><a href="#五、本地图片无法显示问题" class="headerlink" title="五、本地图片无法显示问题"></a>五、本地图片无法显示问题</h2><p>参考<a href="https://www.jianshu.com/p/04814a816caf" target="_blank" rel="noopener">https://www.jianshu.com/p/04814a816caf</a>,其中hexo根目录为你当前修改博客的这个工作目录，非npm安装目录。</p>
-<h2 id="六、异地"><a href="#六、异地" class="headerlink" title="六、异地"></a>六、异地</h2><p>当换电脑修改博客的时候，安装node.js，安装hexo，从git上 clone 备份的博客资源文件，在该文件夹里执行 npm install 生成node_modules文件夹。然后即可开始修改或者新建博客，老样子 hexo g 重新构建public文件夹里的内容，hexo d 发布至博客仓库。</p>
+<h2 id="六、异地"><a href="#六、异地" class="headerlink" title="六、异地"></a>六、异地</h2><p>当换电脑修改博客的时候，安装node.js，安装hexo，从git上 clone 备份的博客资源文件，在该文件夹里执行 npm install 生成node_modules文件夹。然后即可开始修改或者新建博客，hexo d 发布至博客仓库。</p>
 
       
 
