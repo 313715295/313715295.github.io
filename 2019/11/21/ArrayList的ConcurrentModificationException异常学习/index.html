@@ -6,21 +6,23 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://313715295.github.io">
-  <title>学习线程池ThreadPoolExecutor | 随缘记</title>
+  <title>ArrayList的ConcurrentModificationException异常学习 | 随缘记</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="目的： 疑惑线程池参数作用和区别？ 疑惑线程池怎么管理线程的？ 疑惑线程池中的线程状态变更，什么时候进入阻塞状态，什么时候唤醒，机制是？  学习：前人栽树后人乘凉，看大佬的源码解析 https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dolphin0520&#x2F;p&#x2F;3932921.html ，很详细，看完每个人的疑惑应该都能解开了。">
-<meta name="keywords" content="线程池,多线程">
+  <meta name="description" content="目的：为什么ArrayList循环中删除或新增会抛出异常？为什么有时候又不会？ 12345678List&amp;lt;Integer&amp;gt; list = new ArrayList&amp;lt;&amp;gt;();list.add(1);list.add(2);for (Integer o : list) &amp;#123;    if (o.equals(1)) &amp;#123;        list.remove(1">
+<meta name="keywords" content="java,集合">
 <meta property="og:type" content="article">
-<meta property="og:title" content="学习线程池ThreadPoolExecutor">
-<meta property="og:url" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;16&#x2F;%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor&#x2F;">
+<meta property="og:title" content="ArrayList的ConcurrentModificationException异常学习">
+<meta property="og:url" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;21&#x2F;ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0&#x2F;">
 <meta property="og:site_name" content="随缘记">
-<meta property="og:description" content="目的： 疑惑线程池参数作用和区别？ 疑惑线程池怎么管理线程的？ 疑惑线程池中的线程状态变更，什么时候进入阻塞状态，什么时候唤醒，机制是？  学习：前人栽树后人乘凉，看大佬的源码解析 https:&#x2F;&#x2F;www.cnblogs.com&#x2F;dolphin0520&#x2F;p&#x2F;3932921.html ，很详细，看完每个人的疑惑应该都能解开了。">
+<meta property="og:description" content="目的：为什么ArrayList循环中删除或新增会抛出异常？为什么有时候又不会？ 12345678List&amp;lt;Integer&amp;gt; list = new ArrayList&amp;lt;&amp;gt;();list.add(1);list.add(2);for (Integer o : list) &amp;#123;    if (o.equals(1)) &amp;#123;        list.remove(1">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:image" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;16&#x2F;%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor&#x2F;%E8%8E%B7%E5%8F%96%E4%BB%BB%E5%8A%A1.jpg">
-<meta property="og:image" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;16&#x2F;%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor&#x2F;%E9%98%BB%E5%A1%9E%E8%8E%B7%E5%8F%96%E4%BB%BB%E5%8A%A1.jpg">
-<meta property="og:updated_time" content="2019-11-27T13:46:11.104Z">
+<meta property="og:image" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;21&#x2F;ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0&#x2F;ArrayList1.png">
+<meta property="og:image" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;21&#x2F;ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0&#x2F;list2.png">
+<meta property="og:image" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;21&#x2F;ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0&#x2F;list3.png">
+<meta property="og:image" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;21&#x2F;ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0&#x2F;Iterator1.png">
+<meta property="og:updated_time" content="2019-11-27T13:46:11.095Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;16&#x2F;%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor&#x2F;%E8%8E%B7%E5%8F%96%E4%BB%BB%E5%8A%A1.jpg">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;21&#x2F;ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0&#x2F;ArrayList1.png">
   
     <link rel="alternative" href="/atom.xml" title="随缘记" type="application/atom+xml">
   
@@ -134,47 +136,46 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-学习线程池ThreadPoolExecutor" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-ArrayList的ConcurrentModificationException异常学习" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      学习线程池ThreadPoolExecutor
+      ArrayList的ConcurrentModificationException异常学习
     </h1>
   
 
         
-        <a href="/2019/11/16/%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor/" class="archive-article-date">
-  	<time datetime="2019-11-16T08:20:51.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-11-16</time>
+        <a href="/2019/11/21/ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0/" class="archive-article-date">
+  	<time datetime="2019-11-21T06:50:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-11-21</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="目的："><a href="#目的：" class="headerlink" title="目的："></a>目的：</h1><ol>
-<li>疑惑线程池参数作用和区别？</li>
-<li>疑惑线程池怎么管理线程的？</li>
-<li>疑惑线程池中的线程状态变更，什么时候进入阻塞状态，什么时候唤醒，机制是？</li>
-</ol>
-<h1 id="学习："><a href="#学习：" class="headerlink" title="学习："></a>学习：</h1><p>前人栽树后人乘凉，看大佬的源码解析 <a href="https://www.cnblogs.com/dolphin0520/p/3932921.html" target="_blank" rel="noopener">https://www.cnblogs.com/dolphin0520/p/3932921.html</a> ，很详细，看完每个人的疑惑应该都能解开了。</p>
+        <h1 id="目的："><a href="#目的：" class="headerlink" title="目的："></a>目的：</h1><p>为什么ArrayList循环中删除或新增会抛出异常？为什么有时候又不会？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Integer&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">list.add(<span class="number">1</span>);</span><br><span class="line">list.add(<span class="number">2</span>);</span><br><span class="line"><span class="keyword">for</span> (Integer o : list) &#123;</span><br><span class="line">    <span class="keyword">if</span> (o.equals(<span class="number">1</span>)) &#123;</span><br><span class="line">        list.remove(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面代码在阿里规范中有说明，当删除1的时候不会报错，删除2的时候会报错，为什么？</p>
 <a id="more"></a>
-
-
-<h1 id="所得："><a href="#所得：" class="headerlink" title="所得："></a>所得：</h1><p>大部分疑惑看完源码解析后都有数了，但是还一个疑惑未解，很多教程可能也有这个说法，线程池的线程执行完任务后不会关闭线程，而是还给线程池。。这个还，具体是什么情况呢。</p>
-<p>线程池新建完线程后，如果线程在核心线程数内，不会关闭，执行完任务后会重新循环获取任务，如果大于核心线程数少于最大线程数，会涉及到关闭空余线程的过程。</p>
-<p><img src="/2019/11/16/%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor/%E8%8E%B7%E5%8F%96%E4%BB%BB%E5%8A%A1.jpg" alt></p>
-<p>当任务队列没有任务的时候，线程为什么会进入阻塞状态呢？因为任务队列是BlockingQueue，take()方法会阻塞至获取到新元素为止。当任务队列新增任务的时候会唤醒阻塞在take()方法中的线程。</p>
-<p>另一个wokeQueue.poll()方法意义呢？会尝试在keepAliveTime时间内去获取任务，如果获取不到就返回。</p>
-<p>所以，所传入的BlockingQueue具体实现类影响线程池获取任务的形式，并且会影响线程池创建线程的流程。</p>
-<p>比如 LinkedBlockingQueue ，没有指定大小的时候默认 Integer.MAX_VALUE，也就是说在队列满之前不会创建大于核心线程数的线程，最大线程数这个参数就没有意义。</p>
-<p> synchronousQueue ，特殊的队列，也可以说不算队列吧，不存储元素，而是相当于一个中转，一个线程put元素后必须另一个线程take取走才可以。具体可以看源码解析<del>~</del></p>
-<p><img src="/2019/11/16/%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor/%E9%98%BB%E5%A1%9E%E8%8E%B7%E5%8F%96%E4%BB%BB%E5%8A%A1.jpg" alt="阻塞获取任务"></p>
-<h1 id="应用："><a href="#应用：" class="headerlink" title="应用："></a>应用：</h1><p>线程池是管理线程的，为什么要管理线程？可以尝试去了解下最佳线程数限制，根据IO密集型/CPU密集型有所不同，一般是CPU合数*（1+线程阻塞比率）。  </p>
-<p>正常web项目中，以tomcat容器为例，本身已经有tomcat的工作线程池在管理线程了，业务中再使用线程池，无非是任务从一个线程池换至另一个线程池而已。<br>举例来说，A请求进来，不需要等待结果，可以立即返回结果，把业务代码提交至异步线程去处理，虽然A请求立即得到相应了，但是会影响其他请求的时间，<br>因为计算机资源是固定的，当然对于A请求来说是有利的，权衡取舍。</p>
-<p>什么情况下可以考虑多线程呢？<br>A业务，中间可能会经过A1 A2 A3步骤，几个步骤没有依赖关系，可以并发执行的，可以考虑多线程，最后汇总结果。<br>大型任务拆解，至最细的粒度，然后多线程并发执行。不过现在有新的ForkJoinPool，更适用于任务拆解 分治。</p>
+<h1 id="学习："><a href="#学习：" class="headerlink" title="学习："></a>学习：</h1><p>foreach实际效果：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Integer&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">     list.add(<span class="number">1</span>);</span><br><span class="line">     list.add(<span class="number">2</span>);</span><br><span class="line">     <span class="keyword">for</span>(java.util.Iterator i = list.iterator(); i.hasNext();)</span><br><span class="line">     &#123;</span><br><span class="line">         Integer o = (Integer) i.next();</span><br><span class="line">         &#123;</span><br><span class="line">             <span class="keyword">if</span> (o.equals(<span class="number">1</span>)) &#123;</span><br><span class="line">                 list.remove(o);</span><br><span class="line">             &#125;</span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br></pre></td></tr></table></figure>
+<p>正确用例：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Integer&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">       list.add(<span class="number">1</span>);</span><br><span class="line">       list.add(<span class="number">2</span>);</span><br><span class="line">       Iterator&lt;Integer&gt; iterator = list.iterator();</span><br><span class="line">       <span class="keyword">while</span> (iterator.hasNext()) &#123;</span><br><span class="line">           Integer o = iterator.next();</span><br><span class="line">           <span class="keyword">if</span> (o.equals(<span class="number">1</span>)) &#123;</span><br><span class="line">               iterator.remove();</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br></pre></td></tr></table></figure>
+<p>两者都是依靠Iterator迭代循环，唯一区别，一个是list.remove，调用的是ArrayList.remove(),另一个调用的是ArrayList.Itr.remove();</p>
+<p>ArrayList的两个remove方法，看下图片：<br><img src="/2019/11/21/ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0/ArrayList1.png" alt><br><img src="/2019/11/21/ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0/list2.png" alt><br><img src="/2019/11/21/ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0/list3.png" alt></p>
+<p>Iterator的remove方法，下图：<br><img src="/2019/11/21/ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0/Iterator1.png" alt><br>一会贴图，这个remove方法调用的依然是ArrayList的remove方法，但有关键一步 expectedModCount = modCount;<br>为什么这一步就不会抛出异常了呢？<br>其中checkForComodification()方法就是抛出异常的关键，</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">void</span> <span class="title">checkForComodification</span><span class="params">()</span> </span>&#123;</span><br><span class="line">          <span class="keyword">if</span> (modCount != expectedModCount)</span><br><span class="line">              <span class="keyword">throw</span> <span class="keyword">new</span> ConcurrentModificationException();</span><br><span class="line">      &#125;</span><br></pre></td></tr></table></figure>
+<p>这个方法在刚才Iterator的remove，以及next(),set(),add()等都会调用，所以Iterator操作因为加了一个步骤所以不会抛异常，list直接调用，则会出问题。</p>
+<p>为什么例子中remove第一个元素不会抛异常，第二个就会了，先找到抛异常的步骤，在于ArrayList.Itr.next()这一步。   </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">hasNext</span><span class="params">()</span> </span>&#123;</span><br><span class="line">          <span class="keyword">return</span> cursor != size;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="meta">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</span><br><span class="line">      <span class="function"><span class="keyword">public</span> E <span class="title">next</span><span class="params">()</span> </span>&#123;</span><br><span class="line">          checkForComodification();</span><br><span class="line">          <span class="keyword">int</span> i = cursor;</span><br><span class="line">          <span class="keyword">if</span> (i &gt;= size)</span><br><span class="line">              <span class="keyword">throw</span> <span class="keyword">new</span> NoSuchElementException();</span><br><span class="line">          Object[] elementData = ArrayList.<span class="keyword">this</span>.elementData;</span><br><span class="line">          <span class="keyword">if</span> (i &gt;= elementData.length)</span><br><span class="line">              <span class="keyword">throw</span> <span class="keyword">new</span> ConcurrentModificationException();</span><br><span class="line">          cursor = i + <span class="number">1</span>;</span><br><span class="line">          <span class="keyword">return</span> (E) elementData[lastRet = i];</span><br><span class="line">      &#125;</span><br></pre></td></tr></table></figure>
+<p>remove()方法会–size，当移除第一个元素后，size变为1，继续循环hasNext(),发现cursor(当前位置)等于size，不会再执行next()方法。<br>而移除第二个方法的时候，cursor=2，size=1，会继续执行next()方法，则抛出异常。</p>
+<h1 id="分析："><a href="#分析：" class="headerlink" title="分析："></a>分析：</h1><p>问题来了，为什么要抛异常呢，忘记在哪看过，说因为ArrayList是非线程安全的，所以抛异常提示使用者，但是Iterator并没有抛异常，难道就线程安全了么？<br>并没有，Iterator依然也是非线程安全的，如果多线程，需要代码块加锁。</p>
+<p>那么为什么要这么做呢？我们看抛异常的代码，当modCount != expectedModCount的时候抛异常，关键在于modCount这个变量，上面注释很详细，英语渣，用的谷歌翻译。<br>大致意思是：<br>modCount变量为此列表已被<i>结构修改&lt;/ i&gt;的次数，结构修改是指更改列表大小或以其他方式扰乱列表的方式，即进行中的迭代可能会产生错误的结果。<br>面对迭代期间的并发修改，这提供了<i>fail-fast&lt;/ i&gt;行为，而不是非确定性行为。   </i></i></p>
+<p>总体意思就是，list是非线程安全的，迭代过程中，如果发生结构修改，并发的情况下可能会产生错误，所以当这个变量修改的时候，代表了结构发生修改，直接抛出异常不再继续。   </p>
+<p>所以，我觉得这个异常，更多是遵循fail-fast机制。而Iterator没抛异常，总不能没有方法给人用吧，哈哈哈哈，所以做了修改吧，但是切记，不是说明Iterator是线程安全的。</p>
 
       
 
@@ -188,28 +189,17 @@
 		<ul class="article-tag-list">
 			 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">线程池</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">java</a>
         		</li>
       		 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">多线程</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">集合</a>
         		</li>
       		
 		</ul>
 	</div>
 
       
-	<div class="article-category tagcloud">
-		<i class="icon-book icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="/categories/java//" class="article-tag-list-link color5">java</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
 
       
 
@@ -259,7 +249,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=https://313715295.github.io/2019/11/16/%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor/" alt="微信分享二维码">
+      <img src="//pan.baidu.com/share/qrcode?url=https://313715295.github.io/2019/11/21/ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -273,18 +263,9 @@
   
 <nav id="article-nav">
   
-    <a href="/2019/11/21/ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          ArrayList的ConcurrentModificationException异常学习
-        
-      </div>
-    </a>
   
-  
-    <a href="/2019/11/15/%E5%8D%9A%E5%AE%A2%E9%83%A8%E7%BD%B2%E8%87%B3github/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">博客部署至github</div>
+    <a href="/2019/11/16/%E5%AD%A6%E4%B9%A0%E7%BA%BF%E7%A8%8B%E6%B1%A0ThreadPoolExecutor/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">学习线程池ThreadPoolExecutor</div>
       <i class="icon-circle-right"></i>
     </a>
   
