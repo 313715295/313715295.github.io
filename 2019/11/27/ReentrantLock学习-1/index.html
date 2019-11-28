@@ -6,13 +6,17 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://313715295.github.io">
-  <title>Tag: 集合 | 随缘记</title>
+  <title>ReentrantLock学习(1) | 随缘记</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="随缘记">
-<meta property="og:url" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;tags&#x2F;%E9%9B%86%E5%90%88&#x2F;">
+  <meta name="description" content="简介：ReentrantLock是个啥呢，可重入的互斥锁，使用的是AQS。  AQS是啥，看下大佬的文章吧， https:&#x2F;&#x2F;www.jianshu.com&#x2F;p&#x2F;da9d051dcc3d  蛮详细的，可以简单了解下，然后结合ReentrantLock分析用法。  其中有涉及到CAS,是依靠操作系统的compareAndSwapInt命令（原子性的），是乐观锁，如果我们业务中有用到乐观锁，简单的就是">
+<meta name="keywords" content="java,并发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ReentrantLock学习(1)">
+<meta property="og:url" content="https:&#x2F;&#x2F;313715295.github.io&#x2F;2019&#x2F;11&#x2F;27&#x2F;ReentrantLock%E5%AD%A6%E4%B9%A0-1&#x2F;">
 <meta property="og:site_name" content="随缘记">
+<meta property="og:description" content="简介：ReentrantLock是个啥呢，可重入的互斥锁，使用的是AQS。  AQS是啥，看下大佬的文章吧， https:&#x2F;&#x2F;www.jianshu.com&#x2F;p&#x2F;da9d051dcc3d  蛮详细的，可以简单了解下，然后结合ReentrantLock分析用法。  其中有涉及到CAS,是依靠操作系统的compareAndSwapInt命令（原子性的），是乐观锁，如果我们业务中有用到乐观锁，简单的就是">
 <meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-11-28T06:56:02.734Z">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="随缘记" type="application/atom+xml">
@@ -127,36 +131,136 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-  
+            <article id="post-ReentrantLock学习-1" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
     
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2019" class="archive-year">2019</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2019/11/21/ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0/" class="archive-article-date">
-  	<time datetime="2019-11-21T06:50:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-11-21</time>
-</a>
-        </div>
-    	 
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2019/11/21/ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0/">ArrayList的ConcurrentModificationException异常学习</a>
+    <h1 class="article-title" itemprop="name">
+      ReentrantLock学习(1)
     </h1>
   
 
-        <div class="article-info info-on-right">
-          
+        
+        <a href="/2019/11/27/ReentrantLock%E5%AD%A6%E4%B9%A0-1/" class="archive-article-date">
+  	<time datetime="2019-11-27T13:44:43.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2019-11-27</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="简介："><a href="#简介：" class="headerlink" title="简介："></a>简介：</h2><p>ReentrantLock是个啥呢，可重入的互斥锁，使用的是AQS。</p>
+<ol>
+<li><p>AQS是啥，看下大佬的文章吧， <a href="https://www.jianshu.com/p/da9d051dcc3d" target="_blank" rel="noopener">https://www.jianshu.com/p/da9d051dcc3d</a>  蛮详细的，可以简单了解下，然后结合ReentrantLock分析用法。</p>
+</li>
+<li><p>其中有涉及到CAS,是依靠操作系统的compareAndSwapInt命令（原子性的），是乐观锁，如果我们业务中有用到乐观锁，简单的就是对比下当前值是否为A，如果是的话，则更新，但其中可能会有ABA的问题，然而操作系统的CAS命令是原子性的（需要硬件），所以不会有这个问题。</p>
+<p>东拼西凑找的:<br>操作系统底层的CAS命令，关键在于比较和交换步骤是原子性的，原子操作是不可分割的，在执行完毕之前不会被任何其它任务或事件中断。<br>处理器保证从系统内存当中读取或者写入一个字节是原子的，意思是当一个处理器读取一个字节时，其他处理器不能访问这个字节的内存地址。<br>原子性不可能由软件单独保证–必须需要硬件的支持，因此是和架构相关的。早期在x86 平台上，CPU提供了在指令执行期间对总线加锁的手段。<br>CAS是一种系统原语（所谓原语属于操作系统用语范畴。原语由若干条指令组成的，用于完成一定功能的一个过程。primitive or atomic action 是由若干个机器指令构成的完成某种特定功能的一段程序，具有不可分割性·即原语的执行必须是连续的，在执行过程中不允许被中断）</p>
+</li>
+</ol>
+<h2 id="学习："><a href="#学习：" class="headerlink" title="学习："></a>学习：</h2><p>ReentrantLock有公平锁和非公平锁，默认非公平锁，两者什么区别呢，表面上讲一个要排队，一个可以插队。看下代码实现，暂时只学习加锁和解锁方法，其他方法后续再看。</p>
+<p>非公平锁的加锁：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">void</span> <span class="title">lock</span><span class="params">()</span> </span>&#123;    </span><br><span class="line">    <span class="keyword">if</span> (compareAndSetState(<span class="number">0</span>, <span class="number">1</span>))</span><br><span class="line">        setExclusiveOwnerThread(Thread.currentThread()); </span><br><span class="line">	<span class="keyword">else</span>       </span><br><span class="line">        acquire(<span class="number">1</span>);&#125;</span><br></pre></td></tr></table></figure>
+
+<p>公平锁的加锁：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">void</span> <span class="title">lock</span><span class="params">()</span> </span>&#123;  acquire(<span class="number">1</span>);&#125;</span><br></pre></td></tr></table></figure>
+
+<p>两者的区别，非公平锁会先通过CAS命令，成功的则获取锁，设置锁持有者线程为当前线程，获取锁失败的会执行 acquire(1)方法，公平锁则会直接执行 acquire(1)方法。这一步非公平锁多了个CAS插队步骤。看下 acquire(1)方法代码。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">acquire</span><span class="params">(<span class="keyword">int</span> arg)</span> </span>&#123;    </span><br><span class="line">    <span class="keyword">if</span> (!tryAcquire(arg) &amp;&amp; </span><br><span class="line">        acquireQueued(addWaiter(Node.EXCLUSIVE), arg))</span><br><span class="line">        selfInterrupt();&#125;</span><br></pre></td></tr></table></figure>
+
+<p>tryAcquire(arg)方法需要子类去重写，其他方法都是使用的AQS已经实现的，所以区别在于tryAcquire(arg)。</p>
+<p>非公平锁实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">tryAcquire</span><span class="params">(<span class="keyword">int</span> acquires)</span> </span>&#123;    </span><br><span class="line">    <span class="keyword">return</span> nonfairTryAcquire(acquires);&#125;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">nonfairTryAcquire</span><span class="params">(<span class="keyword">int</span> acquires)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">final</span> Thread current = Thread.currentThread();</span><br><span class="line">            <span class="keyword">int</span> c = getState();</span><br><span class="line">            <span class="keyword">if</span> (c == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> (compareAndSetState(<span class="number">0</span>, acquires)) &#123;</span><br><span class="line">                    setExclusiveOwnerThread(current);</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">    		 <span class="comment">//这个是可重入的逻辑</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (current == getExclusiveOwnerThread()) &#123;</span><br><span class="line">                <span class="keyword">int</span> nextc = c + acquires;</span><br><span class="line">                <span class="keyword">if</span> (nextc &lt; <span class="number">0</span>) <span class="comment">// overflow</span></span><br><span class="line">                    <span class="keyword">throw</span> <span class="keyword">new</span> Error(<span class="string">"Maximum lock count exceeded"</span>);</span><br><span class="line">                setState(nextc);</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+
+<p>公平锁实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">tryAcquire</span><span class="params">(<span class="keyword">int</span> acquires)</span> </span>&#123;</span><br><span class="line">           <span class="keyword">final</span> Thread current = Thread.currentThread();</span><br><span class="line">           <span class="keyword">int</span> c = getState();</span><br><span class="line">           <span class="keyword">if</span> (c == <span class="number">0</span>) &#123;</span><br><span class="line">               <span class="keyword">if</span> (!hasQueuedPredecessors() &amp;&amp;</span><br><span class="line">                   compareAndSetState(<span class="number">0</span>, acquires)) &#123;</span><br><span class="line">                   setExclusiveOwnerThread(current);</span><br><span class="line">                   <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">    		<span class="comment">//这个是可重入的逻辑</span></span><br><span class="line">           <span class="keyword">else</span> <span class="keyword">if</span> (current == getExclusiveOwnerThread()) &#123;</span><br><span class="line">               <span class="keyword">int</span> nextc = c + acquires;</span><br><span class="line">               <span class="keyword">if</span> (nextc &lt; <span class="number">0</span>)</span><br><span class="line">                   <span class="keyword">throw</span> <span class="keyword">new</span> Error(<span class="string">"Maximum lock count exceeded"</span>);</span><br><span class="line">               setState(nextc);</span><br><span class="line">               <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">           &#125;</span><br><span class="line">           <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">       &#125;</span><br></pre></td></tr></table></figure>
+
+<p>两者对比，基本一致，</p>
+<p>判断当前是否有锁，判断state的值。</p>
+<ol>
+<li>state=0，无锁（被释放），公平锁多了个判断是否有等待任务步骤hasQueuedPredecessors()，取反，也就是说当没有等待任务的时候才会去CAS获取锁，而非公平锁是再次（因为非公平锁前面已经尝试CAS获取锁，获取失败的才会执行到这）去CAS获取锁，还是可以插队。</li>
+<li>state=1，已锁，会判断当前线程是否为锁持有线程，如果是则为重入，state+1。如果不是则代表获取锁失败。</li>
+</ol>
+<p>获取锁成功没啥好说的，把state设置为1或者+1，并且设置锁持有线程为当前线程，当获取锁失败的时候公平锁和非公平锁开始一模一样了。</p>
+<p>先看下公平锁判断是否有等待任务的逻辑。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">hasQueuedPredecessors</span><span class="params">()</span> </span>&#123;</span><br><span class="line">       <span class="comment">// The correctness of this depends on head being initialized</span></span><br><span class="line">       <span class="comment">// before tail and on head.next being accurate if the current</span></span><br><span class="line">       <span class="comment">// thread is first in queue.</span></span><br><span class="line">       Node t = tail; <span class="comment">// Read fields in reverse initialization order</span></span><br><span class="line">       Node h = head;</span><br><span class="line">       Node s;</span><br><span class="line">       <span class="keyword">return</span> h != t &amp;&amp;</span><br><span class="line">           ((s = h.next) == <span class="keyword">null</span> || s.thread != Thread.currentThread());</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+
+<p>一下子看的很懵逼，这个基本上要看完后续代码才能回来看这个判断。注释有写,调用此方法等效于但可能比以下方法更有效：{@ code getFirstQueuedThread（）！= Thread.currentThread（）&amp;&amp; hasQueuedThreads（）}。大致流程就是队列中有等待线程且队列第一个线程不是当前线程。</p>
+<p>我们来看下这个表达式的逻辑，tail是尾节点，head是头节点，这两个节点怎么设置的后续会看到，这里判断是头尾节点不一致并且（头节点的后置节点（h.next）为空或者头节点对应线程不等于当前线程）。逐个看表达式的意义。</p>
+<ul>
+<li>头尾节点不一致，代表至少有一个带有线程的节点（后续会看到初始化等待队列的时候会设置头节点为空节点），说明有等待任务，可以理解；</li>
+<li>头节点的next为null，什么情况下会为null呢，</li>
+<li>当头尾节点不一致的时候，并且头节点的 next 节点不为null，此时需要判断 next 节点的对应线程不等于当前线程。</li>
+</ul>
+<p>先记录下来，看后续是否可以解惑。<strong><em>疑惑1！</em></strong></p>
+<p>继续看线程加锁失败后的代码，线程加锁失败后会新建一个节点，加入到等待队列中（链表），如果没有初始化会先初始化。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Node <span class="title">addWaiter</span><span class="params">(Node mode)</span> </span>&#123;</span><br><span class="line">        Node node = <span class="keyword">new</span> Node(Thread.currentThread(), mode);</span><br><span class="line">        <span class="comment">// Try the fast path of enq; backup to full enq on failure</span></span><br><span class="line">        Node pred = tail;</span><br><span class="line">        <span class="keyword">if</span> (pred != <span class="keyword">null</span>) &#123;</span><br><span class="line">            node.prev = pred;</span><br><span class="line">            <span class="keyword">if</span> (compareAndSetTail(pred, node)) &#123;</span><br><span class="line">                pred.next = node;</span><br><span class="line">                <span class="keyword">return</span> node;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        enq(node);</span><br><span class="line">        <span class="keyword">return</span> node;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> Node <span class="title">enq</span><span class="params">(<span class="keyword">final</span> Node node)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">            Node t = tail;</span><br><span class="line">            <span class="keyword">if</span> (t == <span class="keyword">null</span>) &#123; <span class="comment">// Must initialize</span></span><br><span class="line">                <span class="comment">//初始化头节点为空节点</span></span><br><span class="line">                <span class="keyword">if</span> (compareAndSetHead(<span class="keyword">new</span> Node()))</span><br><span class="line">                    tail = head;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                node.prev = t;</span><br><span class="line">                <span class="keyword">if</span> (compareAndSetTail(t, node)) &#123;</span><br><span class="line">                    t.next = node;</span><br><span class="line">                    <span class="keyword">return</span> t;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>新建一个节点，并且设置节点对应线程为当前线程，传入的Node mode为null，这个可以暂时不用管，不是加锁和解锁涉及的范畴。然后获取尾节点，如果尾节点不为空，设置当前节点的 prev节点为尾节点，然后通过CAS设置当前节点为最新的尾节点，成功后，设置之前尾节点 t 的 next节点为当前节点。ps：其实就是接在屁股后面~~。</p>
+<p>如果上面接屁股失败的或者说尾节点为null的，会进入end（Node）方法。是一个循环方法。依然是获取尾节点。</p>
+<p>如果尾节点为空，会初始化等待队列，通过CAS设置头节点为空节点 new Node（），成功后设置 尾节点等于头节点，tail = head；CAS设置失败的继续循环，设置成功的也会继续循环，会把当前节点设置到初始化的尾节点屁股后面（<strong>可能会被插队</strong>）。</p>
+<p>如果尾节点不为空，则和上面新建节点的时候接在尾节点屁股后面逻辑一样，  失败的线程会继续循环。</p>
+<p>成功把当前节点设置为尾节点后返回。</p>
+<p><strong>模拟下情景：</strong></p>
+<p>假设线程A，线程B，线程C，其中初次ABC会通过CAS来一次插队行为，假设A获取锁成功了，则B和C会进入新建节点加入等待队列的逻辑中。 B和C都新建一个节点为节点B和节点C，并且设置节点线程为当前线程，此时尾节点为null，所以都会执行end（Node）方法。</p>
+<p>线程B和线程C获取尾节点，Node t = tail，此时都为null，则通过CAS初始化队列头节点。</p>
+<p>假设线程B设置头节点成功，但是还没开始设置尾节点等于头节点 tail=head，此时尾节点为null。线程C继续循环，获取尾节点还是为null，同时，线程B执行 tail = head，尾节点等于头结点了，线程B继续循环。线程C因为获取的尾节点为null，会继续CAS初始化队列，但因头节点以及被线程B初始化了，所以会失败，继续循环呗。</p>
+<p>新的循环，线程B和线程C，此时尾节点都为刚才初始化的空节点，线程C设置C节点的 prev = 尾节点，线程B也设置 B节点的 prev = 尾节点。然后两个线程通过CAS看看谁能成功把自己的节点设置最新的尾节点，如果线程C成功了，<strong><em>其实这个时候C就插队了（插队1）</em></strong>，因为B先初始化的嘛。反正只有一个能成功把自己的节点设置为最新尾节点，然后设置之前尾节点的 next节点为自己的节点，成功接在屁股后面了，然后返回节点。失败的线程继续循环呗。</p>
+<p>设置成功的进入下一个方法，排队等待逻辑：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">acquireQueued</span><span class="params">(<span class="keyword">final</span> Node node, <span class="keyword">int</span> arg)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">boolean</span> failed = <span class="keyword">true</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">boolean</span> interrupted = <span class="keyword">false</span>;</span><br><span class="line">            <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">                <span class="keyword">final</span> Node p = node.predecessor();</span><br><span class="line">                <span class="keyword">if</span> (p == head &amp;&amp; tryAcquire(arg)) &#123;</span><br><span class="line">                    setHead(node);</span><br><span class="line">                    p.next = <span class="keyword">null</span>; <span class="comment">// help GC</span></span><br><span class="line">                    failed = <span class="keyword">false</span>;</span><br><span class="line">                    <span class="keyword">return</span> interrupted;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">//设置前置节点的waitStatus值，加锁逻辑只需关注-1即可。</span></span><br><span class="line">                <span class="keyword">if</span> (shouldParkAfterFailedAcquire(p, node) &amp;&amp;</span><br><span class="line">                    parkAndCheckInterrupt())</span><br><span class="line">                    interrupted = <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (failed)</span><br><span class="line">                cancelAcquire(node);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">final</span> Node <span class="title">predecessor</span><span class="params">()</span> <span class="keyword">throws</span> NullPointerException </span>&#123;</span><br><span class="line">            Node p = prev;</span><br><span class="line">            <span class="keyword">if</span> (p == <span class="keyword">null</span>)</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> NullPointerException();</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">                <span class="keyword">return</span> p;</span><br><span class="line">        &#125;</span><br><span class="line"> <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">setHead</span><span class="params">(Node node)</span> </span>&#123;</span><br><span class="line">        head = node;</span><br><span class="line">        node.thread = <span class="keyword">null</span>;</span><br><span class="line">        node.prev = <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>几个布尔变量暂时不管，又是一个循环体，获取当前节点的 prev节点，判断该 prev 节点是否为头节点，如果是的情况下会尝试加锁tryAcquire(arg)，对！就是上面那个加锁方法，如果加锁失败则会修改 prev 节点的waitStatus=-1，代表该 prev节点的 next节点对应的线程可能会被挂起，其他几个状态在加锁和解锁里没有用到，暂时不关注。然后会再次循环，如果依然加锁失败，则会被挂起。</p>
+<p>还是情景模拟下：</p>
+<p>此时等待队列的情况，头节点为初始化的空节点，后续一次为 B节点 C节点 D节点。对应BCD线程。A线程是初次加锁CAS成功的线程。</p>
+<p>此时线程B获取 prev节点为头节点，然后线程B会去尝试加锁，如果此时线程A还没释放锁，线程B加锁失败，继续执行代码，会修改 prev节点的waitStatus=-1，然后继续循环，尝试加锁，如果此时加锁再次失败，继续执行shouldParkAfterFailedAcquire(p, node) &amp;&amp; parkAndCheckInterrupt()，因为前面已经修改了prev 节点的waitStatus值，所以前一个表达式为false，会执行第二个表达式，挂起线程。当线程A解锁的时候，会获取头节点，并判断头节点的waitStatus值，如果为-1，则需要唤醒 头结点的 next节点的线程，也就是这里的线程B。</p>
+<p>如果线程B加锁成功呢，会把节点B设置为头节点，并且thread和prev都为null。然后执行同步代码块。</p>
+<p>此时线程C如果还没被挂起，循环发现自己的prev节点，也就是B节点以及是头节点了，会和B的轨迹一模一样。</p>
+<p>线程D嘛，还没轮到，发现前置节点C还没成为头节点，会设置C节点的waitStatus值为-1，再循环一次，发现还不是，线程D就会被挂起，直到线程C获取到线程（此时头节点为节点C）后，解锁的时候才会唤醒线程D。</p>
+<p>加锁排队逻辑就结束了，看下解锁的情况。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">unlock</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        sync.release(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">release</span><span class="params">(<span class="keyword">int</span> arg)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (tryRelease(arg)) &#123;</span><br><span class="line">            Node h = head;</span><br><span class="line">            <span class="comment">//这一步就是判断next节点的线程是否需要唤醒。</span></span><br><span class="line">            <span class="keyword">if</span> (h != <span class="keyword">null</span> &amp;&amp; h.waitStatus != <span class="number">0</span>)</span><br><span class="line">                unparkSuccessor(h);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">tryRelease</span><span class="params">(<span class="keyword">int</span> releases)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">int</span> c = getState() - releases;</span><br><span class="line">            <span class="keyword">if</span> (Thread.currentThread() != getExclusiveOwnerThread())</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> IllegalMonitorStateException();</span><br><span class="line">            <span class="keyword">boolean</span> free = <span class="keyword">false</span>;</span><br><span class="line">    		<span class="comment">//如果为0，代表锁释放完毕，如果大于0，代表是可重入锁，还没释放完毕。</span></span><br><span class="line">            <span class="keyword">if</span> (c == <span class="number">0</span>) &#123;</span><br><span class="line">                free = <span class="keyword">true</span>;</span><br><span class="line">                setExclusiveOwnerThread(<span class="keyword">null</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            setState(c);</span><br><span class="line">            <span class="keyword">return</span> free;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+
+<p>全程加锁和解锁的过程中，等待队列的头节点只有在两个情况下被更新。第一个是初始化的时候设置为空节点，第二个是当线程加锁成功后，把对应节点设置为头节点。如果等待队列的任务都执行完毕，此时头节点为最后一个执行任务的节点。</p>
+<p>回顾到刚才遗留的<u><strong><em>疑惑1！</em></strong></u>公平锁判断是否有等待任务的逻辑；</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">hasQueuedPredecessors</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">// The correctness of this depends on head being initialized</span></span><br><span class="line">        <span class="comment">// before tail and on head.next being accurate if the current</span></span><br><span class="line">        <span class="comment">// thread is first in queue.</span></span><br><span class="line">        Node t = tail; <span class="comment">// Read fields in reverse initialization order</span></span><br><span class="line">        Node h = head;</span><br><span class="line">        Node s;</span><br><span class="line">        <span class="keyword">return</span> h != t &amp;&amp;</span><br><span class="line">            ((s = h.next) == <span class="keyword">null</span> || s.thread != Thread.currentThread());</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个判断逻辑在什么时候会用到呢。</p>
+<ol>
+<li><p>初次加锁的线程尝试加锁的时候会判断一次，又根据任务队列是否有初始化，是否正在初始化，是否清空任务有不同情况。</p>
+<ol>
+<li>任务队列还没初始化，此时头尾节点都为null，第一个表达式为false，不会继续执行后续表达式，此时多个线程会通过CAS获取锁，此时是非公平的。<strong><em>插队2</em></strong></li>
+<li>任务队列正在初始化，假设线程A加锁成功，线程B则需要进入等待队列，开始初始化等待队列。这时候A释放锁，线程C尝试加锁，会有多重情况。<ol>
+<li>线程B还没开始初始化队列，线程C可以插队，因为头尾节点都为null嘛；</li>
+<li>线程B已经初始化队列，设置头节点为空节点，但是尾节点为null，此时线程C 第一个表达式为true，继续执行第二个，先看第二个小表达式，h.next==null，为true，所以整个表达式返回true，不能加锁，此时是公平的，好像全局就这里用到这个判断，如果去掉这个判断，则后面表达式就抛异常了。</li>
+<li>线程B已经初始化队列，并且设置尾节点=头节点，此时线程 C 第一个表达式为false，可以加锁，插队了，非公平。<strong><em>插队3</em></strong></li>
+</ol>
+</li>
+<li>任务队列被清空后，任务队列头节点=尾节点=最后一个任务节点，此时多个线程进来第一个表达式为false，可以插队，非公平，但是后续不会再初始化队列，不过直到尾节点被成功修改之前，都是有可能被插队的。<strong><em>插队4</em></strong></li>
+</ol>
+</li>
+<li><p>加锁失败加入等待队列的线程再次去尝试加锁的时候会判断一次：</p>
+<ol>
+<li><p>线程加锁失败后，节点加入至等待队列中，然后把当节点接到屁股上，如果当期线程对应节点的 prev节点为头节点，会尝试加锁，<strong><u>如果无锁</u></strong>，此时会再次判断该逻辑。</p>
+<ol>
+<li>略过初始化等待队列步骤，假设线程B已经成功设置B节点为尾节点了，头节点为空节点，此时线程B尝试去加锁，新来线程C尝试加锁，线程A释放锁。这时候线程B和C 判断 h！=t 都为true，h.next==null为false，所以关键在于 s.thread != Thread.currentThread()，线程C为true，所以线程C不能加锁，需要加入等待队列，线程B返回false，线程B加锁成功。</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<p>可以看到，上面几个插队问题，都是因为头尾节点一致，h！=t 为false的时候，头尾节点一致的情况发生在上面1.1、1.2.1、1.2.3、1.3,  如果把表达式改为：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">hasQueuedPredecessors</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">// The correctness of this depends on head being initialized</span></span><br><span class="line">        <span class="comment">// before tail and on head.next being accurate if the current</span></span><br><span class="line">        <span class="comment">// thread is first in queue.</span></span><br><span class="line">        Node t = tail; <span class="comment">// Read fields in reverse initialization order</span></span><br><span class="line">        Node h = head;</span><br><span class="line">        Node s;</span><br><span class="line">        <span class="keyword">return</span> (h != t||h!=<span class="keyword">null</span>) &amp;&amp;</span><br><span class="line">            ((s = h.next) == <span class="keyword">null</span> || s.thread != Thread.currentThread());</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>此时，上面判断逻辑中的 1.2.3的情况，虽然头尾节点一致，但是不是null，前一个表达式为true，后一个表达式 h.next==null 为true，不能加锁，就不能插队了。再看下1.3的情况，和前面的一样，都需要加入至等待队列中，但CAS加入队列的过程还是可能插队，而且1.1和1.2.1的依然还是会发生，线程A加锁成功，线程B去初始化队列，还没开始的时候，线程A释放锁，线程C进来，因为线程B还没开始初始化，都还是为null，所以还是可以插队。所以意义不太大。</p>
+<p>到此为止，ReentrantLock加锁，解锁，等待队列的排队，唤醒 大部分都已了解。公平锁也不一定都是公平的，也会有时候被插队。后续再看看其他的。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
@@ -166,25 +270,112 @@
         		</li>
       		 
         		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">集合</a>
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">并发</a>
         		</li>
       		
 		</ul>
 	</div>
 
-          
+      
 
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=https://313715295.github.io/2019/11/27/ReentrantLock%E5%AD%A6%E4%B9%A0-1/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
+  
+<nav id="article-nav">
   
   
-    </div></section>
+    <a href="/2019/11/21/ArrayList%E7%9A%84ConcurrentModificationException%E5%BC%82%E5%B8%B8%E5%AD%A6%E4%B9%A0/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">ArrayList的ConcurrentModificationException异常学习</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+  
+  
   
 
-    
+  
+
+  
+
+  
 
 
           </div>
@@ -207,9 +398,9 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
+		isPost: true,
 		isArchive: false,
-		isTag: true,
+		isTag: false,
 		isCategory: false,
 		open_in_new: true,
 		toc_hide_index: true,
