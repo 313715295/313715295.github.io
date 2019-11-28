@@ -16,7 +16,7 @@
 <meta property="og:site_name" content="随缘记">
 <meta property="og:description" content="简介：ReentrantLock是个啥呢，可重入的互斥锁，使用的是AQS。  AQS是啥，看下大佬的文章吧， https:&#x2F;&#x2F;www.jianshu.com&#x2F;p&#x2F;da9d051dcc3d  蛮详细的，可以简单了解下，然后结合ReentrantLock分析用法。  其中有涉及到CAS,是依靠操作系统的compareAndSwapInt命令（原子性的），是乐观锁，如果我们业务中有用到乐观锁，简单的就是">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-11-28T07:00:35.771Z">
+<meta property="og:updated_time" content="2019-11-28T08:00:02.230Z">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="随缘记" type="application/atom+xml">
@@ -226,10 +226,10 @@
 <p>回顾到刚才遗留的<u><strong><em>疑惑1！</em></strong></u>公平锁判断是否有等待任务的逻辑；</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">hasQueuedPredecessors</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">// The correctness of this depends on head being initialized</span></span><br><span class="line">        <span class="comment">// before tail and on head.next being accurate if the current</span></span><br><span class="line">        <span class="comment">// thread is first in queue.</span></span><br><span class="line">        Node t = tail; <span class="comment">// Read fields in reverse initialization order</span></span><br><span class="line">        Node h = head;</span><br><span class="line">        Node s;</span><br><span class="line">        <span class="keyword">return</span> h != t &amp;&amp;</span><br><span class="line">            ((s = h.next) == <span class="keyword">null</span> || s.thread != Thread.currentThread());</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
 
-<p>这个判断逻辑在什么时候会用到呢。</p>
-<ol>
+<p>这个判断逻辑在什么时候会用到呢?</p>
+<ul>
 <li><p>初次加锁的线程尝试加锁的时候会判断一次，又根据任务队列是否有初始化，是否正在初始化，是否清空任务有不同情况。</p>
-<ol>
+<ul>
 <li>任务队列还没初始化，此时头尾节点都为null，第一个表达式为false，不会继续执行后续表达式，此时多个线程会通过CAS获取锁，此时是非公平的。<strong><em>插队2</em></strong></li>
 <li>任务队列正在初始化，假设线程A加锁成功，线程B则需要进入等待队列，开始初始化等待队列。这时候A释放锁，线程C尝试加锁，会有多重情况。<ol>
 <li>线程B还没开始初始化队列，线程C可以插队，因为头尾节点都为null嘛；</li>
@@ -238,22 +238,20 @@
 </ol>
 </li>
 <li>任务队列被清空后，任务队列头节点=尾节点=最后一个任务节点，此时多个线程进来第一个表达式为false，可以插队，非公平，但是后续不会再初始化队列，不过直到尾节点被成功修改之前，都是有可能被插队的。<strong><em>插队4</em></strong></li>
-</ol>
+</ul>
 </li>
 <li><p>加锁失败加入等待队列的线程再次去尝试加锁的时候会判断一次：</p>
-<ol>
+<ul>
 <li><p>线程加锁失败后，节点加入至等待队列中，然后把当节点接到屁股上，如果当期线程对应节点的 prev节点为头节点，会尝试加锁，<strong><u>如果无锁</u></strong>，此时会再次判断该逻辑。</p>
-<ol>
-<li>略过初始化等待队列步骤，假设线程B已经成功设置B节点为尾节点了，头节点为空节点，此时线程B尝试去加锁，新来线程C尝试加锁，线程A释放锁。这时候线程B和C 判断 h！=t 都为true，h.next==null为false，所以关键在于 s.thread != Thread.currentThread()，线程C为true，所以线程C不能加锁，需要加入等待队列，线程B返回false，线程B加锁成功。</li>
-</ol>
+<p> 略过初始化等待队列步骤，假设线程B已经成功设置B节点为尾节点了，头节点为空节点，此时线程B尝试去加锁，新来线程C尝试加锁，线程A释放锁。这时候线程B和C 判断 h！=t 都为true，h.next==null为false，所以关键在于 s.thread != Thread.currentThread()，线程C为true，所以线程C不能加锁，需要加入等待队列，线程B返回false，线程B加锁成功。</p>
 </li>
-</ol>
+</ul>
 </li>
-</ol>
-<p>可以看到，上面几个插队问题，都是因为头尾节点一致，h！=t 为false的时候，头尾节点一致的情况发生在上面1.1、1.2.1、1.2.3、1.3,  如果把表达式改为：</p>
+</ul>
+<p>可以看到，上面几个插队问题，都是因为头尾节点一致，h！=t 为false的时候, 如果把表达式改为：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">hasQueuedPredecessors</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">// The correctness of this depends on head being initialized</span></span><br><span class="line">        <span class="comment">// before tail and on head.next being accurate if the current</span></span><br><span class="line">        <span class="comment">// thread is first in queue.</span></span><br><span class="line">        Node t = tail; <span class="comment">// Read fields in reverse initialization order</span></span><br><span class="line">        Node h = head;</span><br><span class="line">        Node s;</span><br><span class="line">        <span class="keyword">return</span> (h != t||h!=<span class="keyword">null</span>) &amp;&amp;</span><br><span class="line">            ((s = h.next) == <span class="keyword">null</span> || s.thread != Thread.currentThread());</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
 
-<p>此时，上面判断逻辑中的 1.2.3的情况，虽然头尾节点一致，但是不是null，前一个表达式为true，后一个表达式 h.next==null 为true，不能加锁，就不能插队了。再看下1.3的情况，和前面的一样，都需要加入至等待队列中，但CAS加入队列的过程还是可能插队，而且1.1和1.2.1的依然还是会发生，线程A加锁成功，线程B去初始化队列，还没开始的时候，线程A释放锁，线程C进来，因为线程B还没开始初始化，都还是为null，所以还是可以插队。所以意义不太大。</p>
+<p>此时，上面判断逻辑中的 当头尾节点一致但是不为null的时候（初始化后，任务情况后），前一个表达式为true，后一个表达式 h.next==null 为true，不能加锁，就不能插队了。需要加入至等待队列中，但CAS加入队列的过程还是可能插队，而且当头尾节点都为null的时候，线程A加锁成功，线程B去初始化队列，还没开始的时候，线程A释放锁，线程C进来，因为线程B还没开始初始化，都还是为null，所以还是可以插队。所以意义不太大。</p>
 <p>到此为止，ReentrantLock加锁，解锁，等待队列的排队，唤醒 大部分都已了解。公平锁也不一定都是公平的，也会有时候被插队。后续再看看其他的。</p>
 
       
