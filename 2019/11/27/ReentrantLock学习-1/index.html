@@ -16,7 +16,7 @@
 <meta property="og:site_name" content="随缘记">
 <meta property="og:description" content="简介：ReentrantLock是个啥呢，可重入的互斥锁，使用的是AQS。  AQS是啥，看下大佬的文章吧， https:&#x2F;&#x2F;www.jianshu.com&#x2F;p&#x2F;da9d051dcc3d  蛮详细的，可以简单了解下，然后结合ReentrantLock分析用法。  其中有涉及到CAS,是依靠操作系统的compareAndSwapInt命令（原子性的），是乐观锁，如果我们业务中有用到乐观锁，简单的就是">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-11-28T06:56:02.734Z">
+<meta property="og:updated_time" content="2019-11-28T07:00:35.771Z">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternative" href="/atom.xml" title="随缘记" type="application/atom+xml">
@@ -159,6 +159,8 @@
 <p>东拼西凑找的:<br>操作系统底层的CAS命令，关键在于比较和交换步骤是原子性的，原子操作是不可分割的，在执行完毕之前不会被任何其它任务或事件中断。<br>处理器保证从系统内存当中读取或者写入一个字节是原子的，意思是当一个处理器读取一个字节时，其他处理器不能访问这个字节的内存地址。<br>原子性不可能由软件单独保证–必须需要硬件的支持，因此是和架构相关的。早期在x86 平台上，CPU提供了在指令执行期间对总线加锁的手段。<br>CAS是一种系统原语（所谓原语属于操作系统用语范畴。原语由若干条指令组成的，用于完成一定功能的一个过程。primitive or atomic action 是由若干个机器指令构成的完成某种特定功能的一段程序，具有不可分割性·即原语的执行必须是连续的，在执行过程中不允许被中断）</p>
 </li>
 </ol>
+<a id="more"></a>
+
 <h2 id="学习："><a href="#学习：" class="headerlink" title="学习："></a>学习：</h2><p>ReentrantLock有公平锁和非公平锁，默认非公平锁，两者什么区别呢，表面上讲一个要排队，一个可以插队。看下代码实现，暂时只学习加锁和解锁方法，其他方法后续再看。</p>
 <p>非公平锁的加锁：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">void</span> <span class="title">lock</span><span class="params">()</span> </span>&#123;    </span><br><span class="line">    <span class="keyword">if</span> (compareAndSetState(<span class="number">0</span>, <span class="number">1</span>))</span><br><span class="line">        setExclusiveOwnerThread(Thread.currentThread()); </span><br><span class="line">	<span class="keyword">else</span>       </span><br><span class="line">        acquire(<span class="number">1</span>);&#125;</span><br></pre></td></tr></table></figure>
@@ -468,6 +470,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">并发</a>
+              </li>
+             
+              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">IT技术</a>
               </li>
              
@@ -477,10 +483,6 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">多线程</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">并发</a>
               </li>
             
             <div class="clearfix"></div>
