@@ -392,12 +392,17 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h1 id="目的："><a href="#目的：" class="headerlink" title="目的："></a>目的：</h1><ol>
-<li>疑惑线程池参数作用和区别？</li>
-<li>疑惑线程池怎么管理线程的？</li>
+        <h1 id="问题："><a href="#问题：" class="headerlink" title="问题："></a>问题：</h1><ol>
+<li>线程池参数作用和区别？</li>
+<li>线程池怎么管理线程的？</li>
 <li>疑惑线程池中的线程状态变更，什么时候进入阻塞状态，什么时候唤醒，机制是？</li>
+<li>线程池怎么结束？</li>
+<li>runWorker的时候，为什么worker要加锁？</li>
+<li>为什么线程池中的worker不能用可重入锁？</li>
 </ol>
-<h1 id="学习："><a href="#学习：" class="headerlink" title="学习："></a>学习：</h1><p>前人栽树后人乘凉，看大佬的源码解析 <a href="https://www.cnblogs.com/dolphin0520/p/3932921.html" target="_blank" rel="noopener">https://www.cnblogs.com/dolphin0520/p/3932921.html</a> ，很详细，看完每个人的疑惑应该都能解开了。</p>
+<h1 id="学习："><a href="#学习：" class="headerlink" title="学习："></a>学习：</h1><p>前人栽树后人乘凉，看大佬的源码解析：</p>
+<p>1、 <a href="https://www.cnblogs.com/dolphin0520/p/3932921.html" target="_blank" rel="noopener">https://www.cnblogs.com/dolphin0520/p/3932921.html</a> （java8之前的）</p>
+<p>2、 <a href="https://blog.csdn.net/programmer_at/article/details/79799267" target="_blank" rel="noopener">https://blog.csdn.net/programmer_at/article/details/79799267</a>  （java8的，很详细）</p>
         
       
 
@@ -646,11 +651,7 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color3">并发</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">IT技术</a>
+                <a href="javascript:void(0)" class="js-tag color4">多线程</a>
               </li>
              
               <li class="article-tag-list-item">
@@ -658,11 +659,15 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">jvm</a>
+                <a href="javascript:void(0)" class="js-tag color5">IT技术</a>
               </li>
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">多线程</a>
+                <a href="javascript:void(0)" class="js-tag color3">并发</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">jvm</a>
               </li>
             
             <div class="clearfix"></div>
